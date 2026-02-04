@@ -1,0 +1,90 @@
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Base Styling */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a;
+    color: #e5e7eb;
+    line-height: 1.7;
+}
+
+/* Layout */
+.container {
+    max-width: 900px;
+    margin: 60px auto;
+    padding: 40px;
+}
+
+/* Headings */
+h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-bottom: 30px;
+}
+
+h3 {
+    font-size: 1.6rem;
+    margin: 40px 0 15px;
+}
+
+h4 {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+/* Text */
+.intro {
+    font-size: 1.05rem;
+    margin-bottom: 30px;
+}
+
+ul {
+    margin-left: 20px;
+}
+
+li {
+    margin-bottom: 8px;
+}
+
+.planned {
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Cards */
+.card {
+    background: #020617;
+    border-left: 4px solid #38bdf8;
+    padding: 15px 20px;
+    margin: 15px 0;
+    border-radius: 4px;
+}
+
+/* Quote */
+blockquote {
+    margin-top: 20px;
+    padding-left: 20px;
+    border-left: 4px solid #22c55e;
+    color: #cbd5f5;
+    font-style: italic;
+}
+
+/* Footer */
+footer {
+    margin-top: 60px;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    text-align: center;
+}
