@@ -1,85 +1,96 @@
-import json
-import os
+import uuid
 
-# INPUTS (hardcoded for v1)
 
-user_instruction = "Summarize the three documents and provide a combined overview."
-
-documents = {
-    "doc1": "Text of document one goes here.",
-    "doc2": "Text of document two goes here.",
-    "doc3": "Text of document three goes here."
-}
-
-# PLANNER SYSTEM PROMPT
-
-PLANNER_PROMPT = """
-You are an AI Planner Agent.
-
-Your job is NOT to solve the task.
-Your job is to understand the user's intent and decompose the task into
-clear, structured steps that can be executed by worker agents.
-
-Rules:
-- Do NOT perform the task yourself.
-- Do NOT summarize the documents.
-- ONLY output valid JSON.
-- The output represents instructions for worker agents.
-
-Output JSON schema:
-{
-  "intent": string,
-  "tasks": [
-    {
-      "id": number,
-      "type": string,
-      "input": string or list
-    }
-  ],
-  "execution_policy": {
-    "parallelizable_tasks": list of task ids,
-    "requires_assembly": boolean
-  }
-}
-"""
-
-# MOCK LLM CALL
-
-def call_planner_llm(prompt, instruction, docs):
-    """
-    This is a placeholder for the LLM call.
-    We simulate what a planner LLM would return.
-    """
-
-    planner_output = {
-        "intent": "Summarize multiple documents and produce a combined overview",
-        "tasks": [
-            {"id": 1, "type": "summarize", "input": "doc1"},
-            {"id": 2, "type": "summarize", "input": "doc2"},
-            {"id": 3, "type": "summarize", "input": "doc3"},
-            {"id": 4, "type": "aggregate", "input": [1, 2, 3]}
-        ],
-        "execution_policy": {
-            "parallelizable_tasks": [1, 2, 3],
-            "requires_assembly": True
+class Planner:
+    def __init__(self):
+        # Keywords mapped to task types
+        self._task_patterns = {
+            "summarize": [
+                {"type": "extract", "description": "Extract key information from sources"},
+                {"type": "summarize", "description": "Generate concise summary"},
+            ],
+            "analyze": [
+                {"type": "extract", "description": "Extract relevant data points"},
+                {"type": "analyze", "description": "Analyze patterns and trends"},
+                {"type": "generate", "description": "Generate analysis report"},
+            ],
+            "compare": [
+                {"type": "extract", "description": "Extract data from all sources"},
+                {"type": "analyze", "description": "Compare findings across sources"},
+                {"type": "validate", "description": "Cross-validate comparisons"},
+                {"type": "generate", "description": "Generate comparison report"},
+            ],
+            "extract": [
+                {"type": "extract", "description": "Extract key entities and data"},
+                {"type": "validate", "description": "Validate extracted information"},
+            ],
+            "validate": [
+                {"type": "extract", "description": "Extract claims from content"},
+                {"type": "validate", "description": "Validate claims against sources"},
+                {"type": "generate", "description": "Generate validation report"},
+            ],
         }
-    }
 
-    return planner_output
+    def create_plan(self, user_intent: str, num_sources: int = 0) -> dict:
+        """
+        Convert user intent into structured tasks with reliability signals.
+        """
+        tasks = self._decompose_intent(user_intent, num_sources)
 
-# MAIN EXECUTION
+        plan = {
+            "intent": user_intent,
+            "tasks": tasks,
+            "execution_policy": {
+                "parallel": len(tasks) > 4,
+                "max_retries": 2,
+                "confidence_threshold": 0.6
+            }
+        }
 
-if __name__ == "__main__":
-    print("Running Planner Agent...\n")
+        return plan
 
-    planner_result = call_planner_llm(
-        PLANNER_PROMPT,
-        user_instruction,
-        documents
-    )
+    def _decompose_intent(self, intent: str, num_sources: int = 0) -> list:
+        """
+        Keyword-driven decomposition into typed tasks with worker assignments.
+        """
+        intent_lower = intent.lower()
+        matched_tasks = []
 
-    print("Planner Output (Worker Instructions):\n")
-    print(json.dumps(planner_result, indent=2))
+        # Check for keyword matches
+        for keyword, task_templates in self._task_patterns.items():
+            if keyword in intent_lower:
+                matched_tasks = list(task_templates)
+                break
 
-    print("\nNOTE:")
-    print("This output represents the instruction set that will be sent to worker agents.")
+        # Default fallback
+        if not matched_tasks:
+            matched_tasks = [
+                {"type": "extract", "description": "Extract key data from sources"},
+                {"type": "analyze", "description": "Analyze content"},
+                {"type": "generate", "description": "Generate response"},
+            ]
+
+        # Determine truth mode based on keywords
+        uses_ssot = any(
+            kw in intent_lower
+            for kw in ["latest", "current", "verify", "fact", "validate", "source"]
+        )
+
+        # Build final task list with IDs, worker assignments, truth_mode
+        tasks = []
+        num_workers = min(len(matched_tasks), 5)
+
+        for i, template in enumerate(matched_tasks):
+            worker_id = (i % num_workers) + 1
+            truth_mode = "ssot" if (uses_ssot or template["type"] == "validate") else "model"
+
+            tasks.append({
+                "id": str(uuid.uuid4())[:8],
+                "type": template["type"],
+                "description": template["description"],
+                "worker": worker_id,
+                "truth_mode": truth_mode,
+                "confidence_threshold": 0.7 if truth_mode == "ssot" else 0.6,
+            })
+
+        return tasks

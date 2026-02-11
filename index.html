@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Orchestration System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-tertiary: #18181b;
+            --bg-card: #1c1c1f;
+            --bg-card-hover: #222225;
+            --border-subtle: #27272a;
+            --border-medium: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #10b981;
+            --accent-hover: #34d399;
+            --accent-muted: #059669;
+            --success: #22c55e;
+            --warning: #eab308;
+            --error: #ef4444;
+            --info: #3b82f6;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 11, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1.25rem 2rem;
+        }
+
+        .header-content {
+            width: 100%;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .header-title span {
+            color: var(--accent);
+        }
+
+        .header-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+
+        .header-subtitle span {
+            color: var(--text-secondary);
+        }
+
+        .main-container {
+            width: 100%;
+            padding: 7rem 2rem 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-medium);
+        }
+
+        .ssot-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .ssot-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-medium);
+            border-radius: 12px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--accent);
+            background: rgba(16, 185, 129, 0.1);
+            transform: scale(1.01);
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            stroke: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            stroke: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .file-types {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .file-type {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .file-type:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .file-type-icon {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-muted);
+        }
+
+        .file-type:hover .file-type-icon {
+            stroke: var(--accent);
+        }
+
+        .file-type-label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .file-overview {
+            margin-top: 1.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .file-overview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .file-overview-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .file-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .file-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            transition: background 0.2s ease;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--text-muted);
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .file-badge {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            padding: 0.125rem 0.375rem;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+        }
+
+        .file-status {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .status-dot.loaded {
+            background: var(--success);
+        }
+
+        .status-dot.parsing {
+            background: var(--warning);
+            animation: pulse 1s infinite;
+        }
+
+        .status-dot.error {
+            background: var(--error);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .file-size {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .file-remove {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .file-remove:hover {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .file-remove svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--error);
+        }
+
+        .empty-files {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+        }
+
+        .orchestration-section {
+            margin-bottom: 2rem;
+        }
+
+        .orchestration-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .orchestration-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-title-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-icon {
+            font-size: 1rem;
+        }
+
+        .panel-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .panel-model {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            margin-left: 1.5rem;
+        }
+
+        .panel-body {
+            padding: 1.25rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .planner-panel {
+            min-height: 450px;
+        }
+
+        .planner-input {
+            width: 100%;
+            min-height: 120px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.875rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.8125rem;
+            resize: vertical;
+            transition: all 0.2s ease;
+        }
+
+        .planner-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .planner-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .generate-btn {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .generate-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .json-output {
+            margin-top: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            flex: 1;
+            min-height: 150px;
+        }
+
+        .json-key {
+            color: #a78bfa;
+        }
+
+        .json-string {
+            color: var(--accent);
+        }
+
+        .json-number {
+            color: #fcd34d;
+        }
+
+        .json-boolean {
+            color: #f87171;
+        }
+
+        .workers-panel {
+            min-height: 450px;
+        }
+
+        .workers-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .worker-card {
+            display: flex;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .worker-card:hover {
+            border-color: var(--border-medium);
+        }
+
+        .worker-content {
+            flex: 1;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+        }
+
+        .worker-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .worker-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .worker-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+
+        .worker-status-dot.idle {
+            background: var(--text-muted);
+        }
+
+        .worker-status-dot.running {
+            background: var(--accent);
+            animation: pulse 1s infinite;
+        }
+
+        .worker-status-dot.complete {
+            background: var(--success);
+        }
+
+        .worker-status-dot.failed {
+            background: var(--error);
+        }
+
+        .worker-model {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+        }
+
+        .worker-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .worker-progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .worker-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .worker-progress-text {
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .worker-task {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .confidence-bar-vertical {
+            width: 48px;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0.5rem;
+            position: relative;
+        }
+
+        .confidence-fill {
+            width: 24px;
+            border-radius: 4px;
+            transition: height 0.5s ease, background 0.5s ease;
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .confidence-label {
+            font-size: 0.625rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            position: absolute;
+            bottom: 8px;
+        }
+
+        .see-more-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .see-more-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .see-more-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .see-more-btn.expanded svg {
+            transform: rotate(180deg);
+        }
+
+        .hidden-workers {
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .hidden-workers.show {
+            display: flex;
+        }
+
+        .assembly-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .assembly-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .assembly-body {
+            padding: 1.5rem;
+        }
+
+        .assembly-output {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.25rem;
+            min-height: 150px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .assembly-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .overall-confidence {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .confidence-label-text {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .confidence-bar-horizontal {
+            width: 200px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease, background 0.5s ease;
+        }
+
+        .confidence-percentage {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .warnings-summary {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8125rem;
+            color: var(--warning);
+        }
+
+        .warnings-summary svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .control-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .control-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .toggle-label {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .toggle-label.active {
+            color: var(--text-primary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-medium);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent-muted);
+            border-color: var(--accent);
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            left: calc(100% - 20px);
+            background: var(--accent-hover);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .slider {
+            width: 120px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .slider-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .run-btn {
+            margin-left: auto;
+            padding: 0.75rem 2rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .run-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+        }
+
+        .run-btn:active {
+            transform: translateY(0);
+        }
+
+        .run-btn.running {
+            pointer-events: none;
+        }
+
+        .run-btn.running::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: loading 1s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.8125rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="header-title">AI Task Orchestration System – <span>Reliability First</span></h1>
+            <p class="header-subtitle">
+                <span>Planner</span> → <span>Workers</span> → <span>Validation</span> → <span>Assembly</span>
+            </p>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="ssot-section">
+            <div class="section-header">
+                <div class="section-icon">📁</div>
+                <h2 class="section-title">SSOT – Single Source of Truth</h2>
+                <span class="section-subtitle">Authoritative Inputs</span>
+            </div>
+
+            <div class="ssot-container">
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" class="file-input" id="fileInput" multiple accept=".pdf,.txt,.md,.json">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="17,8 12,3 7,8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <p class="upload-text">Drop files here or click to upload</p>
+                    <p class="upload-hint">PDF, TXT, MD, JSON, URL, or paste text</p>
+
+                    <div class="file-types">
+                        <div class="file-type" data-type="pdf">
+                            <svg class="file-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14,2 14,8 20,8" />
+                            </svg>
+                            <span class="file-type-label">PDF</span>
+                        </div>
+                        <div class="file-type" data-type="text">
+                            <svg class="file-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <line x1="10" y1="9" x2="8" y2="9" />
+                            </svg>
+                            <span class="file-type-label">Text</span>
+                        </div>
+                        <div class="file-type" data-type="paste" id="pasteBtn">
+                            <svg class="file-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                            </svg>
+                            <span class="file-type-label">Paste</span>
+                        </div>
+                        <div class="file-type" data-type="url" id="urlBtn">
+                            <svg class="file-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                            </svg>
+                            <span class="file-type-label">URL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="file-overview" id="fileOverview">
+                    <div class="file-overview-header">
+                        <span class="file-overview-title">File Overview</span>
+                        <span class="file-count" id="fileCount">0 sources loaded</span>
+                    </div>
+                    <div class="file-list" id="fileList">
+                        <div class="empty-files">No files uploaded yet</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="orchestration-section">
+            <div class="section-header">
+                <div class="section-icon">⚡</div>
+                <h2 class="section-title">Main Orchestration Framework</h2>
+            </div>
+
+            <div class="orchestration-grid">
+                <div class="panel planner-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-row">
+                            <span class="panel-icon"></span>
+                            <span class="panel-title">Planner</span>
+                        </div>
+                        <div class="panel-model">OpenAI GPT-4o</div>
+                    </div>
+                    <div class="panel-body">
+                        <textarea class="planner-input" id="plannerInput"
+                            placeholder="Describe your task objective...&#10;&#10;Example: Analyze the uploaded document and extract key insights about market trends, then generate a summary report with confidence scores."></textarea>
+                        <button class="generate-btn" id="generatePlanBtn">Generate Task Plan</button>
+                        <div class="json-output" id="jsonOutput">
+                            <span class="empty-state">Task plan will appear here...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel workers-panel">
+                    <div class="panel-header">
+                        <div class="panel-title-row">
+                            <span class="panel-icon">⚙</span>
+                            <span class="panel-title">Workers</span>
+                        </div>
+                        <div class="panel-model">Claude Sonnet 4</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="workers-list" id="workersList">
+                            <div class="worker-card" id="worker1">
+                                <div class="worker-content">
+                                    <div class="worker-header">
+                                        <span class="worker-name">Worker 1</span>
+                                        <span class="worker-status-dot idle" id="worker1Status"></span>
+                                    </div>
+                                    <div class="worker-model">Claude Sonnet 4</div>
+                                    <div class="worker-progress-container">
+                                        <div class="worker-progress-bar">
+                                            <div class="worker-progress-fill" id="worker1Progress" style="width: 0%">
+                                            </div>
+                                        </div>
+                                        <span class="worker-progress-text" id="worker1ProgressText">Task 0/0</span>
+                                    </div>
+                                    <div class="worker-task" id="worker1Task">Idle</div>
+                                </div>
+                                <div class="confidence-bar-vertical">
+                                    <div class="confidence-fill" id="worker1Confidence" style="height: 0%;"></div>
+                                    <span class="confidence-label" id="worker1ConfLabel">—</span>
+                                </div>
+                            </div>
+
+                            <div class="worker-card" id="worker2">
+                                <div class="worker-content">
+                                    <div class="worker-header">
+                                        <span class="worker-name">Worker 2</span>
+                                        <span class="worker-status-dot idle" id="worker2Status"></span>
+                                    </div>
+                                    <div class="worker-model">Claude Sonnet 4</div>
+                                    <div class="worker-progress-container">
+                                        <div class="worker-progress-bar">
+                                            <div class="worker-progress-fill" id="worker2Progress" style="width: 0%">
+                                            </div>
+                                        </div>
+                                        <span class="worker-progress-text" id="worker2ProgressText">Task 0/0</span>
+                                    </div>
+                                    <div class="worker-task" id="worker2Task">Idle</div>
+                                </div>
+                                <div class="confidence-bar-vertical">
+                                    <div class="confidence-fill" id="worker2Confidence" style="height: 0%;"></div>
+                                    <span class="confidence-label" id="worker2ConfLabel">—</span>
+                                </div>
+                            </div>
+
+                            <div class="worker-card" id="worker3">
+                                <div class="worker-content">
+                                    <div class="worker-header">
+                                        <span class="worker-name">Worker 3</span>
+                                        <span class="worker-status-dot idle" id="worker3Status"></span>
+                                    </div>
+                                    <div class="worker-model">Claude Sonnet 4</div>
+                                    <div class="worker-progress-container">
+                                        <div class="worker-progress-bar">
+                                            <div class="worker-progress-fill" id="worker3Progress" style="width: 0%">
+                                            </div>
+                                        </div>
+                                        <span class="worker-progress-text" id="worker3ProgressText">Task 0/0</span>
+                                    </div>
+                                    <div class="worker-task" id="worker3Task">Idle</div>
+                                </div>
+                                <div class="confidence-bar-vertical">
+                                    <div class="confidence-fill" id="worker3Confidence" style="height: 0%;"></div>
+                                    <span class="confidence-label" id="worker3ConfLabel">—</span>
+                                </div>
+                            </div>
+
+                            <button class="see-more-btn" id="seeMoreBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9" />
+                                </svg>
+                                <span id="seeMoreText">See more workers (2)</span>
+                            </button>
+
+                            <div class="hidden-workers" id="hiddenWorkers">
+                                <div class="worker-card" id="worker4">
+                                    <div class="worker-content">
+                                        <div class="worker-header">
+                                            <span class="worker-name">Worker 4</span>
+                                            <span class="worker-status-dot idle" id="worker4Status"></span>
+                                        </div>
+                                        <div class="worker-model">Claude Sonnet 4</div>
+                                        <div class="worker-progress-container">
+                                            <div class="worker-progress-bar">
+                                                <div class="worker-progress-fill" id="worker4Progress"
+                                                    style="width: 0%"></div>
+                                            </div>
+                                            <span class="worker-progress-text" id="worker4ProgressText">Task 0/0</span>
+                                        </div>
+                                        <div class="worker-task" id="worker4Task">Idle</div>
+                                    </div>
+                                    <div class="confidence-bar-vertical">
+                                        <div class="confidence-fill" id="worker4Confidence" style="height: 0%;"></div>
+                                        <span class="confidence-label" id="worker4ConfLabel">—</span>
+                                    </div>
+                                </div>
+
+                                <div class="worker-card" id="worker5">
+                                    <div class="worker-content">
+                                        <div class="worker-header">
+                                            <span class="worker-name">Worker 5</span>
+                                            <span class="worker-status-dot idle" id="worker5Status"></span>
+                                        </div>
+                                        <div class="worker-model">Claude Sonnet 4</div>
+                                        <div class="worker-progress-container">
+                                            <div class="worker-progress-bar">
+                                                <div class="worker-progress-fill" id="worker5Progress"
+                                                    style="width: 0%"></div>
+                                            </div>
+                                            <span class="worker-progress-text" id="worker5ProgressText">Task 0/0</span>
+                                        </div>
+                                        <div class="worker-task" id="worker5Task">Idle</div>
+                                    </div>
+                                    <div class="confidence-bar-vertical">
+                                        <div class="confidence-fill" id="worker5Confidence" style="height: 0%;"></div>
+                                        <span class="confidence-label" id="worker5ConfLabel">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assembly-panel">
+                <div class="assembly-header">
+                    <div class="panel-title-row">
+                        <span class="panel-icon"></span>
+                        <span class="panel-title">Final Assembly</span>
+                    </div>
+                    <div class="panel-model">Gemini 2.5 Pro</div>
+                </div>
+                <div class="assembly-body">
+                    <div class="assembly-output" id="assemblyOutput">
+                        <span class="empty-state">Combined output will appear here after orchestration
+                            completes...</span>
+                    </div>
+                    <div class="assembly-footer">
+                        <div class="overall-confidence">
+                            <span class="confidence-label-text">Overall Confidence</span>
+                            <div class="confidence-bar-horizontal">
+                                <div class="confidence-bar-fill" id="overallConfidenceBar" style="width: 0%;"></div>
+                            </div>
+                            <span class="confidence-percentage" id="overallConfidenceValue">—</span>
+                        </div>
+                        <div class="warnings-summary" id="warningsSummary" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span id="warningsCount">0 warnings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="control-bar">
+            <div class="control-group">
+                <span class="control-label">Mode</span>
+                <div class="toggle-container">
+                    <span class="toggle-label active" id="simLabel">Simulation</span>
+                    <div class="toggle-switch" id="modeToggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span class="toggle-label" id="realLabel">Real AI</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Failure Rate</span>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="failureSlider" min="0" max="100" value="10">
+                    <span class="slider-value" id="failureValue">10%</span>
+                </div>
+            </div>
+
+            <button class="run-btn" id="runBtn">Run Orchestration</button>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        const state = {
+            sources: [],
+            tasks: [],
+            plan: null,
+            isSimulation: true,
+            failureRate: 10,
+            isRunning: false,
+            workers: [
+                { id: 1, status: 'idle', progress: 0, totalTasks: 0, currentTask: 0, task: 'Idle', confidence: 0 },
+                { id: 2, status: 'idle', progress: 0, totalTasks: 0, currentTask: 0, task: 'Idle', confidence: 0 },
+                { id: 3, status: 'idle', progress: 0, totalTasks: 0, currentTask: 0, task: 'Idle', confidence: 0 },
+                { id: 4, status: 'idle', progress: 0, totalTasks: 0, currentTask: 0, task: 'Idle', confidence: 0 },
+                { id: 5, status: 'idle', progress: 0, totalTasks: 0, currentTask: 0, task: 'Idle', confidence: 0 }
+            ]
+        };
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const fileCount = document.getElementById('fileCount');
+        const plannerInput = document.getElementById('plannerInput');
+        const generatePlanBtn = document.getElementById('generatePlanBtn');
+        const jsonOutput = document.getElementById('jsonOutput');
+        const assemblyOutput = document.getElementById('assemblyOutput');
+        const overallConfidenceBar = document.getElementById('overallConfidenceBar');
+        const overallConfidenceValue = document.getElementById('overallConfidenceValue');
+        const warningsSummary = document.getElementById('warningsSummary');
+        const warningsCount = document.getElementById('warningsCount');
+        const modeToggle = document.getElementById('modeToggle');
+        const simLabel = document.getElementById('simLabel');
+        const realLabel = document.getElementById('realLabel');
+        const failureSlider = document.getElementById('failureSlider');
+        const failureValueEl = document.getElementById('failureValue');
+        const runBtn = document.getElementById('runBtn');
+        const pasteBtn = document.getElementById('pasteBtn');
+        const urlBtn = document.getElementById('urlBtn');
+        const seeMoreBtn = document.getElementById('seeMoreBtn');
+        const hiddenWorkers = document.getElementById('hiddenWorkers');
+
+        const fileIcons = {
+            pdf: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>`,
+            txt: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+            url: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>`,
+            paste: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`
+        };
+
+        uploadArea.addEventListener('click', (e) => {
+            if (!e.target.closest('.file-type')) {
+                fileInput.click();
+            }
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                const source = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    type: file.type.includes('pdf') ? 'pdf' : 'txt',
+                    status: 'parsing',
+                    size: formatFileSize(file.size)
+                };
+                state.sources.push(source);
+                renderFiles();
+
+                const formData = new FormData();
+                formData.append('files', file);
+                fetch(`${API_BASE}/upload`, { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(data => {
+                        source.status = (data.sources && data.sources[0]?.status) || 'loaded';
+                        renderFiles();
+                    })
+                    .catch(() => {
+                        source.status = 'error';
+                        renderFiles();
+                    });
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        pasteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const text = prompt('Paste your text content:');
+            if (text) {
+                const source = {
+                    id: Date.now(),
+                    name: 'Pasted Text',
+                    type: 'paste',
+                    status: 'loaded',
+                    size: formatFileSize(text.length)
+                };
+                state.sources.push(source);
+                renderFiles();
+
+                fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, name: 'Pasted Text', type: 'paste' })
+                }).catch(() => { });
+            }
+        });
+
+        urlBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = prompt('Enter URL:');
+            if (url) {
+                const source = {
+                    id: Date.now(),
+                    name: url.length > 40 ? url.substring(0, 40) + '...' : url,
+                    type: 'url',
+                    status: 'parsing',
+                    size: '—'
+                };
+                state.sources.push(source);
+                renderFiles();
+
+                fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: url, name: source.name, type: 'url' })
+                }).then(() => {
+                    source.status = 'loaded';
+                    renderFiles();
+                }).catch(() => {
+                    source.status = 'error';
+                    renderFiles();
+                });
+            }
+        });
+
+        function renderFiles() {
+            fileCount.textContent = `${state.sources.length} source${state.sources.length !== 1 ? 's' : ''} loaded`;
+
+            if (state.sources.length === 0) {
+                fileList.innerHTML = '<div class="empty-files">No files uploaded yet</div>';
+                return;
+            }
+
+            fileList.innerHTML = state.sources.map(source => `
+                <div class="file-item fade-in">
+                    <div class="file-icon">${fileIcons[source.type] || fileIcons.txt}</div>
+                    <div class="file-info">
+                        <div class="file-name">${source.name}</div>
+                        <div class="file-meta">
+                            <span class="file-badge">${source.type.toUpperCase()}</span>
+                            <div class="file-status">
+                                <span class="status-dot ${source.status}"></span>
+                                <span>${source.status.charAt(0).toUpperCase() + source.status.slice(1)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="file-size">${source.size}</span>
+                    <button class="file-remove" onclick="removeSource(${source.id})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        window.removeSource = function (id) {
+            state.sources = state.sources.filter(s => s.id !== id);
+            renderFiles();
+        };
+
+        seeMoreBtn.addEventListener('click', () => {
+            hiddenWorkers.classList.toggle('show');
+            seeMoreBtn.classList.toggle('expanded');
+            document.getElementById('seeMoreText').textContent =
+                hiddenWorkers.classList.contains('show') ? 'Hide workers' : 'See more workers (2)';
+        });
+
+        generatePlanBtn.addEventListener('click', generatePlan);
+
+        async function generatePlan() {
+            const objective = plannerInput.value.trim();
+            if (!objective) {
+                plannerInput.focus();
+                return;
+            }
+
+            let plan;
+
+            if (state.isSimulation) {
+                plan = {
+                    intent: objective.substring(0, 50) + (objective.length > 50 ? '...' : ''),
+                    tasks: [
+                        { id: 'T001', type: 'extract', description: 'Extract key data from sources', worker: 1 },
+                        { id: 'T002', type: 'analyze', description: 'Analyze patterns and trends', worker: 1 },
+                        { id: 'T003', type: 'extract', description: 'Extract supporting evidence', worker: 2 },
+                        { id: 'T004', type: 'validate', description: 'Cross-validate findings', worker: 2 },
+                        { id: 'T005', type: 'analyze', description: 'Deep semantic analysis', worker: 3 },
+                        { id: 'T006', type: 'generate', description: 'Generate summary report', worker: 3 }
+                    ],
+                    execution_policy: { parallel: false, max_retries: 2, confidence_threshold: 0.6 },
+                    created: new Date().toISOString()
+                };
+            } else {
+                try {
+                    generatePlanBtn.textContent = 'Generating...';
+                    generatePlanBtn.disabled = true;
+                    const resp = await fetch(`${API_BASE}/plan`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ intent: objective })
+                    });
+                    const data = await resp.json();
+                    plan = data.plan;
+                    plan.created = new Date().toISOString();
+                } catch (err) {
+                    jsonOutput.innerHTML = `<span style="color: var(--error);">Error: Could not reach backend. Is the Flask server running?</span>`;
+                    generatePlanBtn.textContent = 'Generate Task Plan';
+                    generatePlanBtn.disabled = false;
+                    return;
+                }
+                generatePlanBtn.textContent = 'Generate Task Plan';
+                generatePlanBtn.disabled = false;
+            }
+
+            state.plan = plan;
+            state.tasks = plan.tasks;
+
+            state.workers.forEach((worker, idx) => {
+                const workerTasks = plan.tasks.filter(t => t.worker === idx + 1);
+                worker.totalTasks = workerTasks.length;
+                worker.currentTask = 0;
+                worker.progress = 0;
+                worker.confidence = 0;
+                worker.task = workerTasks.length > 0 ? 'Ready' : 'No tasks';
+            });
+
+            updateWorkerUI();
+
+            const jsonStr = JSON.stringify(plan, null, 2);
+            jsonOutput.innerHTML = syntaxHighlight(jsonStr);
+        }
+
+        function syntaxHighlight(json) {
+            return json
+                .replace(/(".*?"):/g, '<span class="json-key">$1</span>:')
+                .replace(/: (".*?")/g, ': <span class="json-string">$1</span>')
+                .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="json-boolean">$1</span>');
+        }
+
+        function confidenceColor(pct) {
+            const hue = (pct / 100) * 120;
+            return `hsl(${hue}, 75%, 50%)`;
+        }
+
+        function updateWorkerUI() {
+            state.workers.forEach(worker => {
+                const statusDot = document.getElementById(`worker${worker.id}Status`);
+                const progressFill = document.getElementById(`worker${worker.id}Progress`);
+                const progressText = document.getElementById(`worker${worker.id}ProgressText`);
+                const taskText = document.getElementById(`worker${worker.id}Task`);
+                const confFill = document.getElementById(`worker${worker.id}Confidence`);
+                const confLabel = document.getElementById(`worker${worker.id}ConfLabel`);
+
+                statusDot.className = `worker-status-dot ${worker.status}`;
+                progressFill.style.width = `${worker.progress}%`;
+                progressText.textContent = `Task ${worker.currentTask}/${worker.totalTasks}`;
+                taskText.textContent = worker.task;
+
+                const confHeight = Math.min(80, worker.confidence * 0.8);
+                confFill.style.height = `${confHeight}px`;
+                confFill.style.background = confidenceColor(worker.confidence);
+                confLabel.textContent = worker.confidence > 0 ? `${worker.confidence}%` : '—';
+            });
+        }
+
+        modeToggle.addEventListener('click', () => {
+            state.isSimulation = !state.isSimulation;
+            modeToggle.classList.toggle('active', !state.isSimulation);
+            simLabel.classList.toggle('active', state.isSimulation);
+            realLabel.classList.toggle('active', !state.isSimulation);
+        });
+
+        failureSlider.addEventListener('input', (e) => {
+            state.failureRate = parseInt(e.target.value);
+            failureValueEl.textContent = `${state.failureRate}%`;
+        });
+
+        runBtn.addEventListener('click', runOrchestration);
+
+        async function runOrchestration() {
+            if (state.isRunning || state.tasks.length === 0) return;
+
+            state.isRunning = true;
+            runBtn.classList.add('running');
+            runBtn.textContent = 'Running...';
+
+            state.workers.forEach(w => {
+                w.status = 'idle'; w.progress = 0; w.currentTask = 0;
+                w.confidence = 0; w.task = 'Idle';
+            });
+            updateWorkerUI();
+            warningsSummary.style.display = 'none';
+
+            if (state.isSimulation) {
+                await runSimulation();
+            } else {
+                await runRealBackend();
+            }
+
+            state.isRunning = false;
+            runBtn.classList.remove('running');
+            runBtn.textContent = 'Run Orchestration';
+        }
+
+        async function runSimulation() {
+            let warnings = 0;
+            let totalConfidence = 0;
+            let completedTasks = 0;
+
+            for (let workerIdx = 0; workerIdx < 3; workerIdx++) {
+                const worker = state.workers[workerIdx];
+                const workerTasks = state.tasks.filter(t => t.worker === workerIdx + 1);
+                if (workerTasks.length === 0) continue;
+
+                worker.status = 'running';
+                updateWorkerUI();
+
+                for (let i = 0; i < workerTasks.length; i++) {
+                    worker.currentTask = i + 1;
+                    worker.progress = ((i + 1) / workerTasks.length) * 100;
+                    worker.task = workerTasks[i].description;
+                    updateWorkerUI();
+
+                    await sleep(800 + Math.random() * 800);
+
+                    const failed = Math.random() * 100 < state.failureRate;
+                    if (failed) {
+                        warnings++;
+                        worker.confidence = Math.max(0, worker.confidence - 20);
+                    } else {
+                        const taskConf = Math.floor(70 + Math.random() * 30);
+                        worker.confidence = Math.floor((worker.confidence * i + taskConf) / (i + 1));
+                        totalConfidence += taskConf;
+                        completedTasks++;
+                    }
+                    updateWorkerUI();
+                }
+
+                worker.status = worker.confidence > 50 ? 'complete' : 'failed';
+                worker.task = worker.status === 'complete' ? 'Complete' : 'Failed';
+                updateWorkerUI();
+            }
+
+            finishOrchestration(completedTasks, warnings,
+                completedTasks > 0 ? Math.floor(totalConfidence / completedTasks) : 0, null);
+        }
+
+        async function runRealBackend() {
+            try {
+                const resp = await fetch(`${API_BASE}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan: state.plan })
+                });
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let finalResult = null;
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const data = JSON.parse(line.substring(6));
+
+                        if (data.type === 'worker_update') {
+                            const w = state.workers.find(w => w.id === data.worker_id);
+                            if (w) {
+                                w.status = data.status;
+                                w.currentTask = data.current_task;
+                                w.totalTasks = data.total_tasks;
+                                w.task = data.task_description;
+                                w.confidence = data.confidence;
+                                w.progress = data.progress;
+                                updateWorkerUI();
+                            }
+                        } else if (data.type === 'result') {
+                            finalResult = data;
+                        }
+                    }
+                }
+
+                if (finalResult) {
+                    finishOrchestration(
+                        finalResult.completed_tasks,
+                        finalResult.warnings,
+                        finalResult.overall_confidence,
+                        finalResult.assembled
+                    );
+                }
+            } catch (err) {
+                assemblyOutput.innerHTML = `<span style="color: var(--error);">Error: Could not reach backend.<br>${err.message}<br><br>Is the Flask server running? (python app.py)</span>`;
+            }
+        }
+
+        function finishOrchestration(completedTasks, warnings, overallConf, assembled) {
+            overallConfidenceBar.style.width = `${overallConf}%`;
+            overallConfidenceBar.style.background = confidenceColor(overallConf);
+            overallConfidenceValue.textContent = `${overallConf}%`;
+
+            if (warnings > 0) {
+                warningsSummary.style.display = 'flex';
+                warningsCount.textContent = `${warnings} warning${warnings !== 1 ? 's' : ''}`;
+            }
+
+            let outputHtml = `
+                <strong style="color: var(--text-primary);">Orchestration Complete</strong><br><br>
+                Processed ${completedTasks}/${state.tasks.length} tasks successfully.<br><br>
+                <strong>Summary:</strong><br>
+                • ${state.sources.length} source(s) analyzed<br>
+                • ${state.workers.filter(w => w.status === 'complete').length} workers completed successfully<br>
+                • Overall confidence: ${overallConf}%<br>
+                • ${warnings} warning(s) generated<br>`;
+
+            if (assembled && assembled.assembled_output) {
+                outputHtml += `<br><strong>Worker Outputs:</strong><br>`;
+                for (const [taskId, result] of Object.entries(assembled.assembled_output)) {
+                    const isFailed = assembled.failed_tasks.includes(taskId);
+                    const color = isFailed ? 'var(--warning)' : 'var(--accent)';
+                    outputHtml += `<br><span style="color: ${color}; font-weight: 600;">[${taskId}]</span><br>`;
+                    outputHtml += `<span style="white-space: pre-wrap;">${result}</span><br>`;
+                }
+            }
+
+            assemblyOutput.innerHTML = outputHtml;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        renderFiles();
+        updateWorkerUI();
+    </script>
+</body>
+
+</html>
