@@ -1,3 +1,5 @@
+# worker.py
+
 from models import client, MODELS
 
 WORKER_SYSTEM_PROMPT = """You are a task execution agent.
@@ -25,17 +27,27 @@ Where 0.XX is between 0.0 and 1.0 reflecting how reliable your answer is.
 
 
 class Worker:
-    def execute(self, task: dict, document: str) -> dict:
+    def execute(self, task: dict, document: str, previous_results=None) -> dict:
         task_desc = task.get("description", "")
+        previous_context = ""
 
+        if previous_results:
+            previous_context += "\nRELEVANT PREVIOUS RESULTS:\n"
+            for task_id, res in previous_results.items():
+                previous_context += f"\nTask {task_id}:\n{res.get('result')}\n"
+        
         user_message = f"""
-TASK:
-{task_desc}
+TASK OBJECT:
+{task}
+
+{previous_context}
 
 DOCUMENT:
 {document[:4000] if document else "No document provided."}
 
-Execute the task and end with CONFIDENCE: 0.XX
+Execute strictly based on the task type.
+
+End with CONFIDENCE: 0.XX
 """
 
         try:

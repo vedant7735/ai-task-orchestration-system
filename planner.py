@@ -1,3 +1,5 @@
+# planner.py
+
 import json
 from models import client, MODELS
 
@@ -8,15 +10,18 @@ Your job:
 - Break it into 1 to 3 simple, sequential tasks
 
 Rules:
-- Keep tasks minimal and necessary
-- Tasks must be clear and atomic
-- No parallelism, no dependencies, just a simple ordered list
+- Tasks must be atomic and non-overlapping
+- Independent tasks must NOT depend on each other
 
-Return ONLY valid JSON in this format:
 {
-  "intent": "cleaned version of user intent",
+  "intent": "...",
   "tasks": [
-    { "id": "t1", "description": "..." }
+    {
+      "id": "t1",
+      "type": "LIST | EXPLAIN",
+      "target": "...",
+      "depends_on": []
+    }
   ]
 }
 """
@@ -62,6 +67,11 @@ class Planner:
         return {
             "intent": intent,
             "tasks": [
-                {"id": "t1", "description": "Process the request and generate a response"}
+                {
+                    "id": "t1",
+                    "type": "LIST",
+                    "target": intent,
+                    "depends_on": []
+                }
             ]
         }

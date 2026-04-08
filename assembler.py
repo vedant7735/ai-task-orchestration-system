@@ -1,3 +1,5 @@
+#  assembler.py
+
 from models import client, MODELS
 
 ASSEMBLER_SYSTEM_PROMPT = """You are an assembler in a simple AI pipeline.

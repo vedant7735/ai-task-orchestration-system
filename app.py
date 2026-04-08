@@ -1,53 +1,99 @@
+from flask import Flask, request, jsonify, send_from_directory
 from planner import Planner
 from worker import Worker
 from assembler import Assembler
+from checker import Checker
+
+app = Flask(__name__)
 
 
 def run_pipeline(intent: str, document: str):
     planner = Planner()
     worker = Worker()
     assembler = Assembler()
+    checker = Checker()
+
+    logs = []
 
     # 1. Plan
-    print("\n[1] Planning...")
     plan = planner.create_plan(intent)
-    print(f"Plan: {plan}")
+
+    results = {}
 
     # 2. Execute tasks
-    print("\n[2] Executing tasks...")
-    results = []
-
     for task in plan.get("tasks", []):
-        print(f"\n→ Running task {task['id']}: {task['description']}")
+        relevant_results = {
+            k: v for k, v in results.items()
+            if k in task.get("depends_on", [])
+        }
 
-        output = worker.execute(task, document)
+        retries = 0
+        max_retries = 2
 
-        print("\n--- WORKER OUTPUT ---")
-        print(output["result"])
-        print(f"\nConfidence: {output['confidence']:.2f}")
-        print("--- END ---")
+        while True:
+            output = worker.execute(
+                task,
+                document,
+                previous_results=relevant_results
+            )
 
-        results.append(output)
+            evaluation = checker.evaluate(output)
+
+            # attach verdict (UI needs this)
+            output["verdict"] = evaluation["verdict"]
+
+            if evaluation["verdict"] == "accept":
+                results[task["id"]] = output
+                break
+
+            retries += 1
+
+            if retries > max_retries:
+                results[task["id"]] = output
+                break
 
     # 3. Assemble
-    print("\n[3] Assembling final response...")
-    final = assembler.assemble(plan, results)
+    final = assembler.assemble(plan, list(results.values()))
 
-    print("\n===== FINAL OUTPUT =====\n")
-    print(final["final_output"])
+    return {
+        "plan": plan,
+        "results": results,
+        "final": final
+    }
 
-    print("\n===== META =====")
-    print(f"Low confidence tasks: {final['low_confidence_tasks']}")
-    print(f"Total tasks: {final['total_tasks']}")
+
+# 🔹 Serve frontend
+@app.route("/")
+def home():
+    return send_from_directory(".", "index.html")
+
+@app.route("/frontend/styles.css")
+def styles():
+    return send_from_directory("./frontend", "styles.css")
+
+@app.route("/frontend/script.js")
+def script():
+    return send_from_directory("./frontend", "script.js")
+
+
+@app.route("/<path:path>")
+def static_files(path):
+    return send_from_directory(".", path)
+
+
+# 🔹 API
+@app.route("/run", methods=["POST"])
+def run():
+    data = request.json
+    intent = data.get("intent", "")
+    document = data.get("document", "")
+
+    if not intent:
+        return jsonify({"error": "Intent is required"}), 400
+
+    output = run_pipeline(intent, document)
+    return jsonify(output)
 
 
 if __name__ == "__main__":
-    print("\nAI Pipeline V1 (Minimal)\n")
-
-    intent = input("Enter your intent: ").strip()
-    document = input("\nPaste your document (or leave empty): ").strip()
-
-    if not intent:
-        print("Intent is required.")
-    else:
-        run_pipeline(intent, document)
+    app.run(debug=True)

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Orchestration System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🤖 AI Task Orchestration System</h1>
+            <p class="subtitle">Domain Experts with Confidence-Based Validation</p>
+        </header>
+
+        <!-- State Indicator -->
+        <div id="state-indicator" class="state-indicator">
+            <span class="state-dot" id="state-dot"></span>
+            <span id="state-text">Ready</span>
+        </div>
+
+        <!-- Input Section -->
+        <section id="input-section" class="section">
+            <div class="section-header">
+                <h2>📝 Your Request</h2>
+            </div>
+            <div class="section-content">
+                <div class="input-group">
+                    <label for="intent">What do you need help with?</label>
+                    <textarea id="intent" placeholder="e.g., Write a fibonacci function with memoization"
+                        rows="3"></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="document">Additional context (optional)</label>
+                    <textarea id="document" placeholder="Paste code, requirements, or additional details..."
+                        rows="6"></textarea>
+                </div>
+
+                <button id="submit-btn" class="btn-primary" onclick="runPipeline()">
+                    Process Request →
+                </button>
+            </div>
+        </section>
+
+        <!-- Clarification Section (Hidden by default) -->
+        <section id="clarification-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>⚠️ Clarification Needed</h2>
+            </div>
+            <div class="section-content">
+                <div id="clarification-content">
+                    <!-- Dynamically populated -->
+                </div>
+                <button class="btn-primary" onclick="submitClarification()">
+                    Submit Answers →
+                </button>
+            </div>
+        </section>
+
+        <!-- Planning Section -->
+        <section id="planning-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>📋 Planning</h2>
+            </div>
+            <div class="section-content">
+                <div class="plan-intent">
+                    <strong>Intent:</strong> <span id="plan-intent"></span>
+                </div>
+                <div id="plan-tasks"></div>
+            </div>
+        </section>
+
+        <!-- Routing Section -->
+        <section id="routing-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>🎯 Routing</h2>
+            </div>
+            <div class="section-content">
+                <div id="routing-content">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Execution Section -->
+        <section id="execution-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>⚡ Expert Execution</h2>
+            </div>
+            <div class="section-content">
+                <div id="execution-tasks">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Output Section -->
+        <section id="final-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>✨ Final Output</h2>
+            </div>
+            <div class="section-content">
+                <div class="final-output" id="final-output">
+                    <!-- Dynamically populated -->
+                </div>
+                <button class="btn-secondary" onclick="copyOutput()">
+                    📋 Copy Output
+                </button>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section id="summary-section" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>📊 Execution Summary</h2>
+            </div>
+            <div class="section-content">
+                <div id="summary-content">
+                    <!-- Dynamically populated -->
+                </div>
+                <button class="btn-secondary" onclick="resetPipeline()">
+                    ↻ New Request
+                </button>
+            </div>
+        </section>
+
+        <!-- Error Section -->
+        <section id="error-section" class="section error-section" style="display: none;">
+            <div class="section-header">
+                <h2>⚠️ Error</h2>
+            </div>
+            <div class="section-content">
+                <div id="error-message"></div>
+                <button class="btn-secondary" onclick="resetPipeline()">
+                    Try Again
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
