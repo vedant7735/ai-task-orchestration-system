@@ -1,99 +1,280 @@
-from flask import Flask, request, jsonify, send_from_directory
+# app.py (CLI DEBUG MODE)
+
+import time
 from planner import Planner
 from worker import Worker
 from assembler import Assembler
-from checker import Checker
+from checker import create_validator
+from models import manager, print_ram
 
-app = Flask(__name__)
+planner = Planner()
+worker = Worker()
+assembler = Assembler()
+validator = create_validator()
+
+# ----------------------------
+# TELEMETRY
+# ----------------------------
+def log_stage(stage):
+    print(f"\n{'='*20} {stage} {'='*20}")
+    print_ram()
 
 
+def log_performance(start_time, tokens=None):
+    elapsed = time.time() - start_time
+    print(f"[TIME] {elapsed:.2f}s")
+
+    if tokens:
+        tps = tokens / elapsed if elapsed > 0 else 0
+        print(f"[TOKENS] {tokens} | {tps:.2f} tok/s")
+
+
+# ----------------------------
+# TOKEN ESTIMATE (approx)
+# ----------------------------
+def estimate_tokens(text):
+    if not text:
+        return 0
+    return int(len(text) / 4)  # rough heuristic
+
+# ----------------------------
+# READY TASKS
+# ----------------------------
+
+def get_ready_tasks(tasks, completed_ids):
+    """
+    Return tasks whose dependencies are all completed.
+    """
+    ready = []
+    for task in tasks:
+        task_id = task.get("id")
+        
+        # Skip if already completed
+        if task_id in completed_ids:
+            continue
+        
+        # Check if all dependencies are satisfied
+        deps = task.get("depends_on", [])
+        if all(dep in completed_ids for dep in deps):
+            ready.append(task)
+    
+    return ready
+
+# ----------------------------
+# EXECUTE TASK
+# ----------------------------
+
+def execute_task(task, document, task_results):
+    """
+    Wrapper for worker execution with proper context.
+    """
+    print(f"\n[TASK START] {task['id']}")
+    return worker.execute(task, document, task_results)
+
+# ----------------------------
+# PIPELINE
+# ----------------------------
 def run_pipeline(intent: str, document: str):
-    planner = Planner()
-    worker = Worker()
-    assembler = Assembler()
-    checker = Checker()
 
-    logs = []
+    # ----------------------------
+    # ⚡ ULTRA FAST PATH (SKIP PLANNER)
+    # ----------------------------
+    if len(intent.split()) <= 6:
+        print("\n⚡ ULTRA FAST PATH (Skipping Planner + Assembler)\n")
 
-    # 1. Plan
-    plan = planner.create_plan(intent)
+        task_type = "CODE" if any(k in intent.lower() for k in ["code", "function", "implement"]) else "EXPLAIN"
 
-    results = {}
-
-    # 2. Execute tasks
-    for task in plan.get("tasks", []):
-        relevant_results = {
-            k: v for k, v in results.items()
-            if k in task.get("depends_on", [])
+        task = {
+            "id": "t1",
+            "type": task_type,
+            "target": intent,
+            "depends_on": []
         }
 
-        retries = 0
-        max_retries = 2
+        result = worker.execute(task, document, {})
 
-        while True:
-            output = worker.execute(
-                task,
-                document,
-                previous_results=relevant_results
-            )
+        return {
+            "status": "completed",
+            "plan": {"mode": "ultra_fast"},
+            "results": [result],
+            "final": {
+                "final_output": result["result"],
+                "low_confidence_tasks": [],
+                "total_tasks": 1
+            }
+        }
 
-            evaluation = checker.evaluate(output)
+    # ----------------------------
+    # 🧠 PLANNER
+    # ----------------------------
+    print("\n==================== PLANNER START ====================")
 
-            # attach verdict (UI needs this)
-            output["verdict"] = evaluation["verdict"]
+    plan = planner.analyze_intent(intent)
 
-            if evaluation["verdict"] == "accept":
-                results[task["id"]] = output
-                break
+    if plan.get("status") == "needs_clarification":
+        return plan
 
-            retries += 1
+    tasks = plan.get("tasks", [])
+    mode = plan.get("mode", "decompose")
 
-            if retries > max_retries:
-                results[task["id"]] = output
-                break
+    # ----------------------------
+    # ⚡ DIRECT MODE (SKIP DAG + ASSEMBLER)
+    # ----------------------------
+    if mode == "direct" and len(tasks) == 1:
+        print("\n⚡ DIRECT EXECUTION (Skipping DAG + Assembler)\n")
 
-    # 3. Assemble
-    final = assembler.assemble(plan, list(results.values()))
+        result = worker.execute(tasks[0], document, {})
+
+        print("\n[FINAL OUTPUT]")
+        print(result["result"])
+        print(f"\n[Confidence: {result.get('confidence', 0.0):.2f}]")
+
+        return {
+            "status": "completed",
+            "plan": plan,
+            "results": [result],
+            "final": {
+                "final_output": result["result"],
+                "low_confidence_tasks": [],
+                "total_tasks": 1
+            }
+        }
+
+    # ----------------------------
+    # 🔁 DAG EXECUTION
+    # ----------------------------
+    print("\n==================== WORKER START ====================")
+
+    completed_ids = set()
+    task_results = {}
+    all_results = []
+
+    while len(completed_ids) < len(tasks):
+
+        ready_tasks = get_ready_tasks(tasks, completed_ids)
+
+        if not ready_tasks:
+            return {
+                "status": "error",
+                "message": "Deadlock detected in task dependencies"
+            }
+
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = []
+
+            for task in ready_tasks:
+                futures.append(
+                    executor.submit(
+                        execute_task,
+                        task,
+                        document,
+                        task_results
+                    )
+                )
+
+            for future in futures:
+                output = future.result()
+
+                validation = validator.validate(output)
+                output["validation"] = validation
+
+                # 🔁 RETRY LOGIC
+                if validation["verdict"] == "retry":
+                    original_task = next((t for t in tasks if t["id"] == output["task_id"]), None)
+                    if original_task:
+                        retry_output = worker.execute(original_task, document, task_results)
+                        retry_output["validation"] = validator.validate(retry_output)
+                        output = retry_output
+
+                task_id = output["task_id"]
+
+                completed_ids.add(task_id)
+                task_results[task_id] = output["result"]
+                all_results.append(output)
+
+    # ----------------------------
+    # CRITICAL TASK RECOVERY
+    # ----------------------------
+
+    retry_needed = [
+        r for r in all_results 
+        if r.get("validation", {}).get("verdict") == "retry"
+    ]
+
+    if retry_needed:
+        print(f"\n⚠️ {len(retry_needed)} tasks failed validation. Retrying...")
+
+        for item in retry_needed:
+            task_id = item["task_id"]
+            original_task = next((t for t in tasks if t["id"] == task_id), None)
+        
+            if original_task:
+                old_conf = item.get("confidence", 0)
+                val_type = item.get("validation", {}).get("validation_type", "unknown")
+            
+                print(f"   🔄 Retrying: {task_id}")
+                print(f"      Reason: {val_type} (confidence: {old_conf:.2f})")
+            
+                retry_output = worker.execute(original_task, document, task_results)
+                retry_output["validation"] = validator.validate(retry_output)
+            
+                # Replace old result
+                for i, r in enumerate(all_results):
+                    if r["task_id"] == task_id:
+                        all_results[i] = retry_output
+                        break
+            
+                task_results[task_id] = retry_output["result"]
+            
+                new_conf = retry_output.get("confidence", 0)
+                new_verdict = retry_output.get("validation", {}).get("verdict", "unknown")
+                print(f"      → New: {new_verdict} (confidence: {new_conf:.2f})")
+
+
+    # ----------------------------
+    # 🧩 ASSEMBLER
+    # ----------------------------
+    print("\n==================== ASSEMBLER START ====================")
+
+    final = assembler.assemble(plan, all_results)
+
+    print("\n[FINAL OUTPUT]")
+    print(final["final_output"])
+    print(f"\n[Total tasks: {final.get('total_tasks', 0)}]")
+    print(f"[Low confidence tasks: {final.get('low_confidence_tasks', [])}]")
 
     return {
+        "status": "completed",
         "plan": plan,
-        "results": results,
+        "results": all_results,
         "final": final
     }
 
 
-# 🔹 Serve frontend
-@app.route("/")
-def home():
-    return send_from_directory(".", "index.html")
-
-@app.route("/frontend/styles.css")
-def styles():
-    return send_from_directory("./frontend", "styles.css")
-
-@app.route("/frontend/script.js")
-def script():
-    return send_from_directory("./frontend", "script.js")
-
-
-@app.route("/<path:path>")
-def static_files(path):
-    return send_from_directory(".", path)
-
-
-# 🔹 API
-@app.route("/run", methods=["POST"])
-def run():
-    data = request.json
-    intent = data.get("intent", "")
-    document = data.get("document", "")
-
-    if not intent:
-        return jsonify({"error": "Intent is required"}), 400
-
-    output = run_pipeline(intent, document)
-    return jsonify(output)
-
-
+# ----------------------------
+# CLI LOOP
+# ----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+
+    print("\n=== AI ORCHESTRATION SYSTEM (CLI DEBUG MODE) ===\n")
+
+    while True:
+        try:
+            intent = input("\nEnter intent (or 'exit'): ").strip()
+
+            if intent.lower() == "exit":
+                break
+
+            document = input("Optional document (enter to skip): ").strip()
+
+            run_pipeline(intent, document)
+
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            break
+
+        except Exception as e:
+            print(f"\n[ERROR] {str(e)}")
+            manager.unload_all()

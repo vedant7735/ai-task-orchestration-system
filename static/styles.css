@@ -1,0 +1,500 @@
+/* ═══════════════════════════════════════════════════════
+   ORCHESTRATOR_V1 — Unified Design System
+   Aesthetic anchor: Pipeline tab (emerald terminal + sapphire grid)
+════════════════════════════════════════════════════════ */
+
+:root {
+    --primary: #4edea3;
+    --primary-glow: rgba(78, 222, 163, 0.22);
+    --secondary: #9ed2b5;
+    --tertiary: #ffb3af;
+    --tertiary-glow: rgba(255, 179, 175, 0.22);
+    --surface: #131313;
+    --surface-container: #201f1f;
+    --surface-low: #1c1b1b;
+    --surface-lowest: #0e0e0e;
+    --surface-high: #2a2a2a;
+    --surface-highest: #353534;
+    --on-surface: #e5e2e1;
+    --on-surface-variant: #bbcabf;
+    --outline: #86948a;
+    --outline-variant: #3c4a42;
+    --sapphire: #0f52ba;
+    --sapphire-light: #4a90e2;
+    --sapphire-glow: rgba(74, 144, 226, 0.18);
+}
+
+/* ── Reset / Base ──────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+.font-headline,
+.font-label {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Scrollbars ────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface-lowest);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--surface-highest);
+    border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--outline-variant);
+}
+
+/* ── Structural components ─────────────────────────── */
+.panel {
+    background: var(--surface-low);
+    border: 1px solid var(--outline-variant);
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+/* ── Scanline ──────────────────────────────────────── */
+.scanline {
+    position: fixed;
+    inset: 0;
+    background:
+        linear-gradient(to bottom, transparent 50%, rgba(10, 10, 10, 0.07) 50%),
+        linear-gradient(90deg, rgba(255, 0, 0, 0.012), rgba(0, 255, 0, 0.007), rgba(0, 0, 255, 0.012));
+    background-size: 100% 4px, 3px 100%;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.25;
+}
+
+/* ── Dot-grid background ───────────────────────────── */
+.grid-matrix {
+    background-image: radial-gradient(circle, rgba(15, 82, 186, 0.055) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* ── Navigation ────────────────────────────────────── */
+.nav-btn {
+    border-bottom: 2px solid transparent;
+    transition: all 0.18s ease;
+}
+
+.nav-btn.active {
+    color: var(--primary) !important;
+    background-color: var(--surface-container);
+    border-bottom-color: var(--primary);
+    opacity: 1 !important;
+}
+
+/* ── View switching ────────────────────────────────── */
+.view-section {
+    display: none;
+    animation: vfadeIn 0.25s ease-out;
+}
+
+.view-section.active {
+    display: block;
+}
+
+@keyframes vfadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes traceModuleEnter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.trace-module-enter {
+    animation: traceModuleEnter 0.35s ease-out both;
+}
+
+/* ── Glow helpers ──────────────────────────────────── */
+.glow-text {
+    text-shadow: 0 0 14px var(--primary-glow);
+}
+
+@keyframes pulseGlow {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+}
+
+.animate-glow {
+    animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ── Slide-in for trace cards ──────────────────────── */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.35s ease-out both;
+}
+
+/* ── Execute button disabled ───────────────────────── */
+#pipeline-execute-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* ── Execution path rows ───────────────────────────── */
+.exec-path-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--outline);
+    border: 1px solid transparent;
+    transition: all 0.18s ease;
+}
+
+.exec-path-row .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.exec-path-row.active {
+    color: var(--primary);
+    border-color: rgba(78, 222, 163, 0.25);
+    background: rgba(78, 222, 163, 0.06);
+}
+
+/* ── Trace section dividers ────────────────────────── */
+.trace-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0 0.75rem;
+}
+
+.trace-divider-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(15, 82, 186, 0.18);
+}
+
+.trace-divider-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--outline);
+}
+
+/* ── Worker cards ──────────────────────────────────── */
+.worker-card {
+    background: rgba(12, 42, 85, 0.12);
+    border: 1px solid rgba(15, 82, 186, 0.22);
+    border-left: 2px solid var(--sapphire-light);
+    margin-bottom: 0.75rem;
+    transition: border-color 0.18s ease;
+}
+
+.worker-card:hover {
+    border-color: rgba(78, 222, 163, 0.3);
+}
+
+.worker-card.conf-high {
+    border-left-color: var(--primary);
+}
+
+.worker-card.conf-mid {
+    border-left-color: var(--secondary);
+}
+
+.worker-card.conf-low {
+    border-left-color: var(--tertiary);
+}
+
+/* ── Sapphire Modal ────────────────────────────────────── */
+.expert-modal-panel {
+    background: rgba(8, 20, 38, 0.95);
+    /* Deep dark blue */
+    border: 1px solid rgba(74, 144, 226, 0.4);
+    box-shadow: inset 0 0 40px rgba(15, 82, 186, 0.2);
+}
+
+@keyframes modalEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-enter {
+    animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom scrollbar specifically for the modal content */
+#modal-content::-webkit-scrollbar-track {
+    background: rgba(8, 20, 38, 0.5);
+}
+
+#modal-content::-webkit-scrollbar-thumb {
+    background: rgba(74, 144, 226, 0.3);
+}
+
+#modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(74, 144, 226, 0.6);
+}
+
+/* ── Confidence bars ───────────────────────────────── */
+.conf-bar {
+    height: 100%;
+    transition: width 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.conf-bar.high {
+    background: var(--primary);
+}
+
+.conf-bar.mid {
+    background: var(--secondary);
+}
+
+.conf-bar.low {
+    background: var(--tertiary);
+}
+
+/* ── Task type badge ───────────────────────────────── */
+.type-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border: 1px solid var(--outline-variant);
+    color: var(--outline);
+    background: var(--surface-lowest);
+    flex-shrink: 0;
+}
+
+/* Per-type colouring */
+.type-badge.CODE {
+    color: var(--sapphire-light);
+    border-color: rgba(74, 144, 226, 0.32);
+}
+
+.type-badge.EXPLAIN {
+    color: var(--primary);
+    border-color: rgba(78, 222, 163, 0.32);
+}
+
+.type-badge.CALCULATE {
+    color: var(--secondary);
+    border-color: rgba(158, 210, 181, 0.32);
+}
+
+.type-badge.ANALYZE {
+    color: var(--tertiary);
+    border-color: rgba(255, 179, 175, 0.32);
+}
+
+.type-badge.COMPARE {
+    color: var(--sapphire-light);
+    border-color: rgba(74, 144, 226, 0.32);
+}
+
+.type-badge.DEBUG {
+    color: var(--tertiary);
+    border-color: rgba(255, 179, 175, 0.32);
+}
+
+.type-badge.DESIGN {
+    color: var(--secondary);
+    border-color: rgba(158, 210, 181, 0.32);
+}
+
+/* ── Status dot ────────────────────────────────────── */
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-dot.ok {
+    background: var(--primary);
+    box-shadow: 0 0 5px var(--primary-glow);
+}
+
+.status-dot.err {
+    background: var(--tertiary);
+    box-shadow: 0 0 5px var(--tertiary-glow);
+}
+
+.status-dot.idle {
+    background: var(--outline);
+}
+
+/* ── History table grid ────────────────────────────── */
+.history-grid {
+    display: grid;
+    /* status | id | time | mode | tasks | conf | intent */
+    grid-template-columns: 44px 160px 100px 90px 52px 60px 1fr;
+    gap: 0 0.75rem;
+    align-items: center;
+}
+
+/* ── History filter buttons ────────────────────────── */
+.history-filter-btn {
+    color: var(--outline);
+    background: transparent;
+}
+
+.history-filter-btn.active {
+    color: var(--primary);
+    background: rgba(78, 222, 163, 0.07);
+    border-color: rgba(78, 222, 163, 0.28);
+}
+
+/* ── History row ───────────────────────────────────── */
+.history-row {
+    border-left: 2px solid transparent;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+}
+
+.history-row:hover {
+    background: var(--surface-container);
+}
+
+.history-row.active {
+    border-left-color: var(--primary);
+    background: var(--surface-container);
+}
+
+/* ── Detail task row ───────────────────────────────── */
+.detail-task-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(60, 74, 66, 0.25);
+    font-size: 0.65rem;
+}
+
+.detail-task-row:last-child {
+    border-bottom: none;
+}
+
+/* ── Analytics bars ────────────────────────────────── */
+.a-bar {
+    flex: 1;
+    min-height: 3px;
+    cursor: pointer;
+    transition: filter 0.15s ease, height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px 2px 0 0;
+}
+
+.a-bar:hover {
+    filter: brightness(1.35);
+}
+
+/* ── Decomp pattern cards ──────────────────────────── */
+.decomp-card {
+    transition: border-color 0.18s ease, background 0.18s ease;
+    opacity: 0.38;
+}
+
+.decomp-card.has-data {
+    opacity: 1;
+    border-color: rgba(78, 222, 163, 0.28);
+    background: rgba(78, 222, 163, 0.04);
+}
+
+.decomp-card.has-data .pat-icon {
+    color: var(--primary);
+}
+
+/* ── Validation event rows ─────────────────────────── */
+.val-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-left: 2px solid transparent;
+    transition: background 0.12s ease;
+}
+
+.val-row:hover {
+    background: var(--surface-container);
+}
+
+.val-row.accept {
+    border-left-color: var(--primary);
+}
+
+.val-row.retry {
+    border-left-color: var(--tertiary);
+}
+
+.val-row.skipped {
+    border-left-color: var(--secondary);
+}
+
+/* ── Metrics panel transition ──────────────────────── */
+#metrics-panel {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}

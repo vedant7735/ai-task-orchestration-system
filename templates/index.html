@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>ORCHESTRATOR_V1 — UNIFIED DASHBOARD</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260416-1" />
+
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4edea3",
+                        "secondary": "#9ed2b5",
+                        "tertiary": "#ffb3af",
+                        "surface": "#131313",
+                        "surface-container": "#201f1f",
+                        "surface-low": "#1c1b1b",
+                        "surface-lowest": "#0e0e0e",
+                        "surface-high": "#2a2a2a",
+                        "surface-highest": "#353534",
+                        "outline": "#86948a",
+                        "outline-variant": "#3c4a42",
+                        "sapphire": "#0f52ba",
+                        "sapphire-light": "#4a90e2"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-surface overflow-x-hidden selection:bg-primary selection:text-surface">
+
+    <!-- Scanline -->
+    <div class="scanline"></div>
+
+    <!-- ═══════════════════════════════════════════
+                            NAV
+    ════════════════════════════════════════════ -->
+    <nav class="w-full h-14 border-b border-outline-variant/30 bg-surface/95 backdrop-blur-sm
+            flex justify-between items-center px-6 fixed top-0 z-[60]">
+
+        <div class="flex items-center gap-8">
+            <span class="text-lg font-bold tracking-tighter font-headline uppercase text-on-surface">
+                ORCHESTRATOR_V1
+            </span>
+            <div class="hidden md:flex gap-1">
+                <button onclick="showView('pipeline')" id="nav-pipeline" class="nav-btn active flex items-center gap-2 py-2 px-4 font-label
+                       uppercase text-[10px] tracking-widest text-on-surface opacity-60
+                       hover:bg-surface-container hover:opacity-100 transition-all duration-200">
+                    <span class="material-symbols-outlined text-sm">account_tree</span>
+                    <span>Pipeline</span>
+                </button>
+                <button onclick="showView('history')" id="nav-history" class="nav-btn flex items-center gap-2 py-2 px-4 font-label
+                       uppercase text-[10px] tracking-widest text-on-surface opacity-60
+                       hover:bg-surface-container hover:opacity-100 transition-all duration-200">
+                    <span class="material-symbols-outlined text-sm">history</span>
+                    <span>History</span>
+                </button>
+                <button onclick="showView('analytics')" id="nav-analytics" class="nav-btn flex items-center gap-2 py-2 px-4 font-label
+                       uppercase text-[10px] tracking-widest text-on-surface opacity-60
+                       hover:bg-surface-container hover:opacity-100 transition-all duration-200">
+                    <span class="material-symbols-outlined text-sm">analytics</span>
+                    <span>Analytics</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Status chip -->
+            <div class="hidden md:flex items-center gap-2 mr-4">
+                <span id="status-dot" class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                <span id="system-status-indicator"
+                    class="font-label text-[10px] uppercase tracking-widest text-outline">
+                    SYSTEM_IDLE
+                </span>
+            </div>
+
+            <!-- Session Metrics dropdown -->
+            <div class="relative">
+                <button id="metrics-toggle-btn" class="flex items-center gap-2 px-3 py-1.5 bg-surface-low
+                       border border-outline-variant/30 hover:bg-surface-container
+                       active:scale-95 transition-all duration-100">
+                    <span class="material-symbols-outlined text-secondary text-sm">monitoring</span>
+                    <span class="font-label uppercase text-[10px] tracking-widest">Metrics</span>
+                    <span class="material-symbols-outlined text-xs text-outline" id="metrics-chevron">expand_more</span>
+                </button>
+
+                <div id="metrics-panel" class="absolute right-0 top-full mt-2 w-72
+                        bg-surface-low border border-outline-variant/30
+                        shadow-2xl z-50 hidden opacity-0 translate-y-2
+                        pointer-events-none transition-all duration-200">
+                    <div class="px-5 py-3 border-b border-outline-variant/20 flex justify-between items-center">
+                        <span
+                            class="font-headline text-[10px] uppercase tracking-widest text-outline">Session_Telemetry</span>
+                        <span class="font-label text-[9px] text-outline" id="metrics-session-uptime">00:00:00</span>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Queries_Run</span>
+                                <span class="font-headline text-2xl font-bold text-on-surface"
+                                    id="metric-queries">0</span>
+                            </div>
+                            <span class="font-label text-[9px] text-secondary uppercase">This session</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Total_Tasks</span>
+                                <span class="font-headline text-2xl font-bold text-on-surface"
+                                    id="metric-total-tasks">0</span>
+                            </div>
+                            <span class="font-label text-[9px] text-secondary uppercase">Executed</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">High-Conf_Skips</span>
+                                <span class="font-headline text-2xl font-bold text-primary"
+                                    id="metric-hc-skips">0</span>
+                            </div>
+                            <span class="font-label text-[9px] text-primary uppercase">Token Saves</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Last_Val_Tier</span>
+                                <span class="font-headline text-sm font-bold text-on-surface"
+                                    id="metric-val-tier">—</span>
+                            </div>
+                            <span class="font-label text-[9px] text-outline uppercase">Last run</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-px h-6 bg-outline-variant/20 mx-1"></div>
+            <button class="p-2 text-outline hover:text-on-surface hover:bg-surface-low transition-colors">
+                <span class="material-symbols-outlined text-lg">settings</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════
+                        MAIN
+    ════════════════════════════════════════════ -->
+    <main class="mt-14">
+
+        <!--╔══════════════════════════╗
+            ║  TAB 1 — PIPELINE        ║
+            ╚══════════════════════════╝ -->
+        <section id="pipeline" class="view-section active p-6 md:p-8 min-h-screen">
+            <div class="max-w-[1600px] mx-auto space-y-6">
+
+                <!-- Header -->
+                <div class="flex justify-between items-end border-b border-outline-variant/10 pb-4">
+                    <div>
+                        <h1 class="font-headline text-3xl font-bold tracking-tighter uppercase">Live_Orchestration</h1>
+                        <p class="font-label text-[10px] text-secondary tracking-widest mt-1 uppercase">
+                            INSTANCE_ID: ALPHA-001 // ENGINE: DETERMINISTIC_DAG
+                        </p>
+                    </div>
+                    <div class="text-right hidden md:block">
+                        <div class="font-label text-[10px] text-outline tracking-widest uppercase">Uptime</div>
+                        <div class="font-headline text-lg text-primary tracking-tighter" id="uptime-val">00:00:00</div>
+                    </div>
+                </div>
+
+                <!-- Input row -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+
+                    <!-- Input panel -->
+                    <div class="md:col-span-3 panel border-l-2 border-primary/40 p-6 relative">
+
+                        <!-- Clarification banner -->
+                        <div id="clarification-panel" class="hidden mb-5 p-4 bg-tertiary/10 border border-tertiary/30">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="material-symbols-outlined text-tertiary text-sm">help_outline</span>
+                                <span class="font-headline text-[10px] font-bold text-tertiary uppercase">Clarification
+                                    Required</span>
+                            </div>
+                            <div id="clarification-questions" class="space-y-1 pl-5"></div>
+                        </div>
+
+                        <label class="font-label text-[10px] uppercase tracking-widest text-outline mb-3 block">
+                            Command_Input_Buffer
+                        </label>
+
+                        <div class="flex items-start gap-3">
+                            <span class="text-primary font-headline text-2xl leading-none mt-1">&gt;</span>
+                            <textarea id="pipeline-input" class="w-full bg-transparent border-none focus:ring-0 font-body
+                                   text-base text-on-surface placeholder:text-surface-highest
+                                   h-24 resize-none leading-relaxed"
+                                placeholder="e.g. 'explain C, Java, and Python'  ·  'compare Python and Java'  ·  'fibonacci function'"></textarea>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-4 pt-3 border-t border-outline-variant/10">
+                            <div class="flex gap-4">
+                                <span class="font-label text-[9px] text-secondary/50 flex items-center gap-1 uppercase">
+                                    <span class="material-symbols-outlined text-[11px]">memory</span> PHI-3_READY
+                                </span>
+                                <span class="font-label text-[9px] text-secondary/50 flex items-center gap-1 uppercase">
+                                    <span class="material-symbols-outlined text-[11px]">hub</span> DAG_ENGINE
+                                </span>
+                                <span class="font-label text-[9px] text-secondary/50 flex items-center gap-1 uppercase"
+                                    id="exec-mode-badge">
+                                    <span class="material-symbols-outlined text-[11px]">bolt</span> MODE: AUTO
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="font-label text-[9px] text-outline uppercase hidden" id="executing-hint">
+                                    Ctrl+Enter to re-run
+                                </span>
+                                <button id="pipeline-execute-btn" class="bg-primary text-surface px-7 py-2 font-headline font-bold
+                                       uppercase text-xs tracking-widest transition-all duration-150
+                                       active:scale-95 hover:shadow-[0_0_20px_rgba(78,222,163,0.25)]
+                                       disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none">
+                                    EXECUTE
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="panel p-5 flex flex-col gap-5">
+                        <!-- Execution path -->
+                        <div>
+                            <label class="font-label text-[10px] uppercase tracking-widest text-outline mb-3 block">
+                                Execution_Path
+                            </label>
+                            <div class="space-y-1.5">
+                                <div id="path-ultra" class="exec-path-row">
+                                    <span class="material-symbols-outlined text-sm">bolt</span>
+                                    <span class="flex-1">Ultra-Fast</span>
+                                    <span class="text-[9px] text-outline">≤6 words</span>
+                                </div>
+                                <div id="path-direct" class="exec-path-row">
+                                    <span class="material-symbols-outlined text-sm">arrow_right_alt</span>
+                                    <span class="flex-1">Direct</span>
+                                    <span class="text-[9px] text-outline">1 task</span>
+                                </div>
+                                <div id="path-dag" class="exec-path-row">
+                                    <span class="material-symbols-outlined text-sm">account_tree</span>
+                                    <span class="flex-1">DAG</span>
+                                    <span class="text-[9px] text-outline">multi-task</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Confidence meter -->
+                        <div class="mt-auto pt-4 border-t border-outline-variant/15">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline">Avg_Confidence</span>
+                                <span class="font-label text-[9px] text-primary" id="sidebar-conf-val">—</span>
+                            </div>
+                            <div class="h-1 bg-surface-highest w-full overflow-hidden mb-2">
+                                <div id="sidebar-conf-bar" class="h-full bg-primary transition-all duration-700"
+                                    style="width:0%"></div>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="font-label text-[9px] text-outline uppercase">
+                                    Tier: <span id="sidebar-val-tier" class="text-secondary">—</span>
+                                </span>
+                                <span class="font-label text-[9px] text-outline uppercase">
+                                    Tasks: <span id="sidebar-task-count" class="text-primary">—</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expert Worker Matrix -->
+                <div class="panel flex flex-col grid-matrix border-sapphire/20" style="min-height:520px">
+                    <div class="bg-surface-lowest/60 px-4 py-2.5 flex justify-between items-center
+                            border-b border-sapphire/25">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-sapphire-light">grid_view</span>
+                            <span class="font-headline text-[10px] uppercase tracking-[0.2em]
+                                     text-sapphire-light font-bold">EXPERT_WORKER_MATRIX</span>
+                        </div>
+                        <div class="flex gap-6">
+                            <span id="matrix-dag-label" class="font-label text-[10px] text-sapphire-light/50 uppercase">
+                                PLANNER_DAG: IDLE
+                            </span>
+                            <span id="matrix-tasks-label"
+                                class="font-label text-[10px] text-sapphire-light/50 uppercase">
+                                TASKS: 0
+                            </span>
+                        </div>
+                    </div>
+                    <div id="trace-container" class="flex-1 p-6 h-[450px] overflow-y-auto">
+                        <div id="trace-empty-state" class="flex flex-col items-center justify-center h-full opacity-20">
+                            <span class="material-symbols-outlined text-6xl mb-4">analytics</span>
+                            <span class="font-label text-xs uppercase tracking-[0.3em]">Awaiting execution
+                                data...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telemetry tiles -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="panel p-4 border-l-2 border-secondary/30">
+                        <label
+                            class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Queries_Run</label>
+                        <div class="font-headline text-2xl text-on-surface" id="tile-queries">0</div>
+                    </div>
+                    <div class="panel p-4 border-l-2 border-secondary/30">
+                        <label
+                            class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Tasks_Executed</label>
+                        <div class="font-headline text-2xl text-on-surface" id="tile-tasks">0</div>
+                    </div>
+                    <div class="panel p-4 border-l-2 border-primary/40">
+                        <label
+                            class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">HC_Skips</label>
+                        <div class="font-headline text-2xl text-primary" id="tile-hc-skips">0</div>
+                        <div class="font-label text-[9px] text-outline mt-1 uppercase">Token saves</div>
+                    </div>
+                    <div class="panel p-4 border-l-2 border-secondary/30">
+                        <label
+                            class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Uptime</label>
+                        <div class="font-headline text-xl text-on-surface tracking-tighter" id="tile-uptime">00:00:00
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section><!-- /pipeline -->
+
+        <!--╔══════════════════════════╗
+            ║  TAB 2 — HISTORY         ║
+            ╚══════════════════════════╝ -->
+        <section id="history" class="view-section p-6 md:p-8 min-h-screen">
+            <div class="max-w-[1600px] mx-auto space-y-6">
+
+                <!-- Header -->
+                <div class="flex justify-between items-end border-b border-outline-variant/10 pb-4">
+                    <div>
+                        <h1 class="font-headline text-3xl font-bold tracking-tighter uppercase">Execution_Log</h1>
+                        <p class="font-label text-[10px] text-secondary tracking-widest mt-1 uppercase">
+                            Full audit trail — current session
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-label text-[10px] text-outline tracking-widest uppercase">Total Runs</div>
+                        <div class="font-headline text-xl text-primary" id="history-total">0</div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex flex-wrap gap-3 items-center panel p-2">
+                    <div class="relative flex-grow min-w-[200px]">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2
+                                 text-outline text-sm pointer-events-none">search</span>
+                        <input id="history-search" class="w-full bg-surface-lowest border-none focus:ring-1 focus:ring-primary/20
+                               text-xs font-label uppercase tracking-wider pl-9 py-3
+                               text-on-surface placeholder:text-outline" placeholder="Search intent or execution ID…"
+                            type="text" />
+                    </div>
+                    <div class="flex gap-1.5 flex-shrink-0">
+                        <button data-filter="all" class="history-filter-btn active px-4 py-2 font-label text-[10px]
+                               uppercase tracking-widest border border-outline-variant/30
+                               transition-colors">ALL</button>
+                        <button data-filter="completed" class="history-filter-btn px-4 py-2 font-label text-[10px]
+                               uppercase tracking-widest border border-outline-variant/30
+                               text-outline transition-colors">OK</button>
+                        <button data-filter="error" class="history-filter-btn px-4 py-2 font-label text-[10px]
+                               uppercase tracking-widest border border-outline-variant/30
+                               text-outline transition-colors">ERR</button>
+                    </div>
+                    <button onclick="loadHistory()" class="p-2 border border-outline-variant/30 text-outline
+                           hover:bg-surface-high hover:text-on-surface transition-colors" title="Refresh">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="panel overflow-hidden">
+                    <!-- Column headers -->
+                    <div class="history-grid px-5 py-3 bg-surface-lowest border-b border-outline-variant/20
+                            font-label text-[9px] uppercase tracking-widest text-outline">
+                        <div>Status</div>
+                        <div>Exec ID</div>
+                        <div>Time</div>
+                        <div>Mode</div>
+                        <div>Tasks</div>
+                        <div>Conf</div>
+                        <div>Intent</div>
+                    </div>
+                    <!-- Rows -->
+                    <div id="history-rows" class="divide-y divide-outline-variant/10">
+                        <div class="p-10 text-center opacity-20">
+                            <span class="font-label text-xs uppercase tracking-widest">No history yet.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expandable detail panel -->
+                <div id="history-detail" class="hidden panel border-l-2 border-primary/40 p-6">
+                    <div class="flex justify-between items-start mb-5">
+                        <div>
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">
+                                Execution Detail
+                            </span>
+                            <h3 class="font-headline text-base font-bold uppercase" id="detail-id">—</h3>
+                            <p class="font-label text-[9px] text-outline mt-1" id="detail-ts">—</p>
+                        </div>
+                        <button onclick="closeDetail()" class="p-1.5 text-outline hover:text-on-surface hover:bg-surface-high
+                               transition-colors">
+                            <span class="material-symbols-outlined text-sm">close</span>
+                        </button>
+                    </div>
+
+                    <!-- Meta row -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                        <div class="panel p-3 bg-surface-lowest/50">
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Mode</span>
+                            <span class="font-headline text-sm text-primary uppercase" id="detail-mode">—</span>
+                        </div>
+                        <div class="panel p-3 bg-surface-lowest/50">
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Tasks</span>
+                            <span class="font-headline text-sm text-on-surface" id="detail-task-count">—</span>
+                        </div>
+                        <div class="panel p-3 bg-surface-lowest/50">
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Avg
+                                Confidence</span>
+                            <span class="font-headline text-sm text-primary" id="detail-avg-conf">—</span>
+                        </div>
+                        <div class="panel p-3 bg-surface-lowest/50">
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Status</span>
+                            <span class="font-headline text-sm text-on-surface uppercase" id="detail-status">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Intent -->
+                    <div class="mb-5">
+                        <span
+                            class="font-label text-[9px] uppercase tracking-widest text-outline block mb-2">Intent</span>
+                        <p class="font-body text-sm text-on-surface/80 panel p-3 bg-surface-lowest/30"
+                            id="detail-intent">—</p>
+                    </div>
+
+                    <!-- Task breakdown -->
+                    <div class="mb-5">
+                        <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-2">
+                            Task Breakdown
+                        </span>
+                        <div id="detail-tasks" class="space-y-1.5"></div>
+                    </div>
+
+                    <!-- Final output -->
+                    <div id="detail-final-section">
+                        <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-2">
+                            Final Output
+                        </span>
+                        <div class="panel p-4 bg-surface-lowest/30 border-l-2 border-sapphire/30
+                                max-h-56 overflow-y-auto">
+                            <pre class="font-body text-xs text-on-surface/80 whitespace-pre-wrap leading-relaxed"
+                                id="detail-final-output">—</pre>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section><!-- /history -->
+
+        <!--╔══════════════════════════╗
+            ║  TAB 3 — ANALYTICS       ║
+            ╚══════════════════════════╝ -->
+        <section id="analytics" class="view-section p-6 md:p-8 min-h-screen">
+            <div class="max-w-[1600px] mx-auto space-y-6">
+
+                <!-- Header -->
+                <div class="flex justify-between items-end border-b border-outline-variant/10 pb-4">
+                    <div>
+                        <h1 class="font-headline text-3xl font-bold tracking-tighter uppercase">System_Analytics</h1>
+                        <p class="font-label text-[10px] text-secondary tracking-widest mt-1 uppercase">
+                            Derived from real execution data — zero synthetic metrics
+                        </p>
+                    </div>
+                    <button onclick="refreshAnalytics()" class="flex items-center gap-2 px-4 py-2 border border-outline-variant/30
+                           text-outline hover:bg-surface-high hover:text-on-surface
+                           font-label text-[10px] uppercase tracking-widest transition-colors">
+                        <span class="material-symbols-outlined text-sm">refresh</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- KPI row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="panel p-5 border-l-2 border-primary/50">
+                        <label class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">
+                            Total_Executions
+                        </label>
+                        <div class="font-headline text-3xl text-primary" id="kpi-runs">0</div>
+                        <div class="font-label text-[9px] text-outline mt-1 uppercase">This session</div>
+                    </div>
+                    <div class="panel p-5 border-l-2 border-secondary/50">
+                        <label class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">
+                            Total_Tasks_Run
+                        </label>
+                        <div class="font-headline text-3xl text-secondary" id="kpi-tasks">0</div>
+                        <div class="font-label text-[9px] text-outline mt-1 uppercase">All workers</div>
+                    </div>
+                    <div class="panel p-5 border-l-2 border-primary/50">
+                        <label class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">
+                            Session_Avg_Conf
+                        </label>
+                        <div class="font-headline text-3xl text-primary" id="kpi-conf">—</div>
+                        <div class="font-label text-[9px] text-outline mt-1 uppercase">Across all tasks</div>
+                    </div>
+                    <div class="panel p-5 border-l-2 border-sapphire/50">
+                        <label class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">
+                            HC_Validation_Skips
+                        </label>
+                        <div class="font-headline text-3xl text-sapphire-light" id="kpi-hc">0</div>
+                        <div class="font-label text-[9px] text-outline mt-1 uppercase">Token saves</div>
+                    </div>
+                </div>
+
+                <!-- Mode distribution + Task type -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div class="panel p-6">
+                        <div class="flex justify-between items-center mb-5">
+                            <h2 class="font-headline text-[10px] uppercase tracking-widest text-outline">
+                                Execution_Mode_Distribution
+                            </h2>
+                            <span class="font-label text-[9px] text-secondary uppercase">Planner output</span>
+                        </div>
+                        <div id="mode-dist" class="space-y-4">
+                            <div class="opacity-30 text-center py-6">
+                                <span class="font-label text-xs uppercase tracking-widest">Run queries to
+                                    populate</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel p-6">
+                        <div class="flex justify-between items-center mb-5">
+                            <h2 class="font-headline text-[10px] uppercase tracking-widest text-outline">
+                                Task_Type_Frequency
+                            </h2>
+                            <span class="font-label text-[9px] text-secondary uppercase">Worker specialisations</span>
+                        </div>
+                        <div id="type-dist" class="space-y-3">
+                            <div class="opacity-30 text-center py-6">
+                                <span class="font-label text-xs uppercase tracking-widest">Run queries to
+                                    populate</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Confidence tiers + sparkline -->
+                <div class="panel p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="font-headline text-[10px] uppercase tracking-widest text-outline">
+                            Confidence_Score_Distribution
+                        </h2>
+                        <span class="font-label text-[9px] text-secondary uppercase">Validation tier triggers</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="panel p-4 bg-surface-lowest/50 border-l-2 border-primary/50 text-center">
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">High ≥
+                                0.85</span>
+                            <span class="font-headline text-2xl text-primary" id="tier-high">0</span>
+                            <span class="font-label text-[9px] text-outline block mt-1 uppercase">Auto-Accept</span>
+                        </div>
+                        <div class="panel p-4 bg-surface-lowest/50 border-l-2 border-secondary/50 text-center">
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Mid
+                                0.70–0.84</span>
+                            <span class="font-headline text-2xl text-secondary" id="tier-mid">0</span>
+                            <span class="font-label text-[9px] text-outline block mt-1 uppercase">Quick-Check</span>
+                        </div>
+                        <div class="panel p-4 bg-surface-lowest/50 border-l-2 border-tertiary/50 text-center">
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Low
+                                &lt; 0.70</span>
+                            <span class="font-headline text-2xl text-tertiary" id="tier-low">0</span>
+                            <span class="font-label text-[9px] text-outline block mt-1 uppercase">Full-Verify</span>
+                        </div>
+                    </div>
+                    <span class="font-label text-[9px] uppercase tracking-widest text-outline block mb-2">
+                        Per-task confidence history (last 60)
+                    </span>
+                    <div id="conf-sparkline" class="h-28 flex items-end gap-0.5">
+                        <div class="w-full flex items-center justify-center h-full opacity-20">
+                            <span class="font-label text-[9px] uppercase tracking-widest text-outline">No data</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between mt-1">
+                        <span class="font-label text-[9px] text-outline uppercase">Oldest</span>
+                        <span class="font-label text-[9px] text-outline uppercase">Most Recent</span>
+                    </div>
+                </div>
+
+                <!-- Decomposition patterns -->
+                <div class="panel p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="font-headline text-[10px] uppercase tracking-widest text-outline">
+                            Planner_Decomposition_Patterns
+                        </h2>
+                        <span class="font-label text-[9px] text-secondary uppercase">Rule-based detection</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-ultra_fast">
+                            <span class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">bolt</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Ultra-Fast</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-ultra_fast">0</span>
+                        </div>
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-direct">
+                            <span
+                                class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">arrow_right_alt</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Direct</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-direct">0</span>
+                        </div>
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-list">
+                            <span class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">list</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">List</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-list">0</span>
+                        </div>
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-comparison">
+                            <span
+                                class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">compare_arrows</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Comparison</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-comparison">0</span>
+                        </div>
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-sequential">
+                            <span
+                                class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">arrow_forward</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Sequential</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-sequential">0</span>
+                        </div>
+                        <div class="decomp-card panel p-4 bg-surface-lowest/50 text-center" id="pat-card-numeric">
+                            <span class="material-symbols-outlined text-xl text-outline mb-1 block pat-icon">tag</span>
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-1">Numeric</span>
+                            <span class="font-headline text-xl text-on-surface" id="pat-numeric">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validation event log -->
+                <div class="panel p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-headline text-[10px] uppercase tracking-widest text-outline">
+                            Validation_Event_Log
+                        </h2>
+                        <span class="font-label text-[9px] text-secondary uppercase">
+                            Latest 40 task-level verdicts
+                        </span>
+                    </div>
+                    <div id="val-event-log" class="space-y-0.5 max-h-52 overflow-y-auto">
+                        <div class="opacity-30 text-center py-6">
+                            <span class="font-label text-xs uppercase tracking-widest">No events yet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section><!-- /analytics -->
+
+        <!-- FULL-SCREEN TASK VIEWER -->
+        <div id="task-modal" class="fixed inset-0 z-[200] hidden">
+            <div id="task-modal-backdrop" class="absolute inset-0 bg-black/85 backdrop-blur-md"
+                onclick="closeTaskModal()">
+            </div>
+
+            <div class="relative w-full h-full flex items-center justify-center p-4 md:p-8 pointer-events-none">
+                <div
+                    class="panel w-full max-w-[1300px] h-[92vh] bg-surface-low border-2 border-sapphire/40 shadow-[0_0_80px_rgba(15,82,186,0.25)] flex flex-col pointer-events-auto grid-matrix overflow-hidden">
+
+                    <!-- Modal Header -->
+                    <div
+                        class="flex justify-between items-center px-6 py-4 border-b border-sapphire/30 bg-surface-lowest/80 flex-shrink-0">
+                        <div class="flex items-center gap-4">
+                            <span id="modal-task-type" class="task-type-badge">TASK</span>
+                            <h2 id="modal-task-id"
+                                class="font-headline text-xl font-bold uppercase tracking-wider text-on-surface">
+                            </h2>
+                            <span id="modal-verdict"
+                                class="font-label text-[10px] uppercase px-2.5 py-1 border">
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="copyModalContent()"
+                                class="p-2.5 text-outline hover:text-primary hover:bg-surface-container transition-colors"
+                                title="Copy output">
+                                <span class="material-symbols-outlined text-[18px]">content_copy</span>
+                            </button>
+                            <button onclick="closeTaskModal()"
+                                class="p-2.5 text-outline hover:text-tertiary hover:bg-surface-container transition-colors"
+                                title="Close (Esc)">
+                                <span class="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Meta Bar -->
+                    <div
+                        class="px-6 py-3 border-b border-outline-variant/20 flex items-center justify-between bg-surface-lowest/50 flex-shrink-0">
+                        <div class="flex items-center gap-8">
+                            <!-- Confidence -->
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-0.5">
+                                    Confidence
+                                </span>
+                                <span id="modal-confidence" class="font-headline text-2xl"></span>
+                            </div>
+
+                            <!-- Token estimate -->
+                            <div>
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-0.5">
+                                    Est. Tokens
+                                </span>
+                                <span id="modal-tokens" class="font-headline text-2xl text-secondary"></span>
+                            </div>
+
+                            <!-- Execution badge (CODE tasks only) -->
+                            <div id="modal-exec-badge" class="hidden">
+                                <span
+                                    class="font-label text-[9px] uppercase tracking-widest text-outline block mb-0.5">
+                                    Execution
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span id="modal-exec-status" class="font-label text-xs uppercase font-bold">
+                                    </span>
+                                    <span id="modal-attempts"
+                                        class="font-label text-[9px] text-outline uppercase">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Intent -->
+                        <div class="text-right max-w-[40%]">
+                            <span
+                                class="font-label text-[9px] uppercase tracking-widest text-outline block mb-0.5">
+                                Intent
+                            </span>
+                            <span id="modal-intent" class="font-body text-xs text-on-surface/60 truncate block">
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Bar (thin strip under meta) -->
+                    <div class="h-0.5 bg-surface-highest flex-shrink-0">
+                        <div id="modal-conf-bar" class="h-full bg-primary transition-all duration-700"
+                            style="width:0%"></div>
+                    </div>
+
+                    <!-- Modal Content — single scroll zone -->
+                    <div class="flex-1 overflow-y-auto bg-surface-lowest/20">
+                        <pre id="modal-content"
+                            class="p-8 font-body text-[14px] leading-[1.7] text-on-surface/90 whitespace-pre-wrap break-words selection:bg-primary selection:text-surface">
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/static/script.js?v=20260416-2"></script>
+</body>
+
+</html>

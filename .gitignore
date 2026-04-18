@@ -1,0 +1,13 @@
+# Ignore everything in the root
+/*
+
+# Allow specific folders
+!/static/
+!/templates/
+
+# Allow all .py files in the root
+!/*.py
+
+# Allow README and .gitignore itself
+!/README.md
+!/.gitignore
